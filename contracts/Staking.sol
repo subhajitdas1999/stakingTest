@@ -95,12 +95,12 @@ contract Staking is Ownable {
         if (_lockInDuration == 0) revert InvalidZeroAmount();
 
         require(
-            stakingTokenAddress.allowance(owner(), address(this)) >=
+            stakingTokenAddress.allowance(_msgSender(), address(this)) >=
                 _poolDistributionAmount,
             "Token amount is not approved"
         );
         stakingTokenAddress.transferFrom(
-            owner(),
+            _msgSender(),
             address(this),
             _poolDistributionAmount
         );
