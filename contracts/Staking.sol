@@ -220,7 +220,7 @@ contract Staking is Ownable {
         }
 
         uint256 timeSinceLastClaim = block.timestamp - userStake.lastClaimedAt;
-        uint256 daysSinceLastClaim = timeSinceLastClaim / 10 seconds;
+        uint256 daysSinceLastClaim = timeSinceLastClaim / 1 days;
 
         uint256 dailyDistribution = pool.poolDistributionAmount /
             pool.poolDuration;
