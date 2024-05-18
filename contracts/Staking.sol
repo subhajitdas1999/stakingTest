@@ -4,6 +4,11 @@ pragma solidity 0.8.21;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+@author Subhajit Das
+@title Staking Contract
+@dev A contract that allows users to stake tokens, earn rewards, and unstake tokens after a lock-in period.
+*/
 contract Staking is Ownable {
     uint256 public poolId;
     uint256 public totalStakers;
@@ -66,10 +71,20 @@ contract Staking is Ownable {
         uint256 rewardAmount
     );
 
+    /**
+     * @dev Initializes the contract with the staking token address.
+     * @param _stakingTokenAddress The address of the ERC20 token used for staking.
+     */
     constructor(IERC20 _stakingTokenAddress) Ownable(msg.sender) {
         stakingTokenAddress = _stakingTokenAddress;
     }
 
+    /**
+     * @dev Creates a new staking pool.
+     * @param _poolDistributionAmount The total amount of tokens to be distributed as rewards.
+     * @param _poolDuration The duration of the pool in seconds.
+     * @param _lockInDuration The lock-in duration in seconds.
+     */
     function createPool(
         uint256 _poolDistributionAmount,
         uint256 _poolDuration,
@@ -105,6 +120,11 @@ contract Staking is Ownable {
         );
     }
 
+    /**
+     * @dev Allows a user to stake tokens in a pool.
+     * @param _stakingAmount The amount of tokens to stake.
+     * @param _poolId The ID of the pool to stake in.
+     */
     function stake(uint256 _stakingAmount, uint256 _poolId) external {
         if (_stakingAmount == 0) revert InvalidZeroAmount();
         if (_poolId == 0 || _poolId > poolId) revert InvalidPoolId();
@@ -130,7 +150,7 @@ contract Staking is Ownable {
             if (stakes[_msgSender()][_poolId].stakedAt == 0) {
                 stakers[_poolId].push(_msgSender());
             }
-
+            // add the new staking
             stakes[_msgSender()][_poolId] = Stake(
                 _stakingAmount,
                 block.timestamp,
@@ -146,6 +166,10 @@ contract Staking is Ownable {
         emit Staked(_msgSender(), _poolId, _stakingAmount);
     }
 
+    /**
+     * @dev Allows a user to unstake their tokens after the lock-in period.
+     * @param _poolId The ID of the pool to unstake from.
+     */
     function unStake(
         uint256 _poolId
     ) external validStaking(_msgSender(), _poolId) {
@@ -168,12 +192,22 @@ contract Staking is Ownable {
         emit UnStaked(_msgSender(), _poolId, amountToUnStake);
     }
 
+    /**
+     * @dev Allows a user to claim their rewards.
+     * @param _poolId The ID of the pool to claim rewards from.
+     */
     function claimRewards(
         uint256 _poolId
     ) external validStaking(_msgSender(), _poolId) {
         _claim(_msgSender(), _poolId);
     }
 
+    /**
+     * @dev Calculates the reward for a user in a specific pool.
+     * @param _staker The address of the staker.
+     * @param _poolId The ID of the pool.
+     * @return The amount of reward tokens.
+     */
     function calculateReward(
         address _staker,
         uint256 _poolId
@@ -199,6 +233,11 @@ contract Staking is Ownable {
         return reward;
     }
 
+    /**
+     * @dev Internal function to claim rewards for a staker in a specific pool.
+     * @param _staker The address of the staker.
+     * @param _poolId The ID of the pool.
+     */
     function _claim(address _staker, uint256 _poolId) internal {
         Stake storage userStake = stakes[_staker][_poolId];
         Pool storage pool = pools[_poolId];
@@ -210,6 +249,11 @@ contract Staking is Ownable {
         emit RewardClaimed(_staker, _poolId, reward);
     }
 
+    /**
+     * @dev Returns the current hourly reward emission for a specific pool.
+     * @param _poolId The ID of the pool.
+     * @return The amount of tokens distributed per hour.
+     */
     function getCurrentHourlyRewardEmission(
         uint256 _poolId
     ) external view returns (uint256) {
@@ -220,6 +264,11 @@ contract Staking is Ownable {
         return dailyDistribution / 24;
     }
 
+    /**
+     * @dev Returns the total pool amount left for distribution.
+     * @param _poolId The ID of the pool.
+     * @return The amount of tokens left for distribution.
+     */
     function getTotalPoolAmountLeft(
         uint256 _poolId
     ) external view returns (uint256) {
@@ -228,12 +277,23 @@ contract Staking is Ownable {
         return pool.poolDistributionAmount - pool.totalRewardDistributed;
     }
 
+    /**
+     * @dev Returns the total tokens staked in a specific pool.
+     * @param _poolId The ID of the pool.
+     * @return The total amount of tokens staked.
+     */
     function getTokenStakedInPool(
         uint256 _poolId
     ) external view returns (uint256) {
         return pools[_poolId].totalTokenStaked;
     }
 
+    /**
+     * @dev Returns the list of stakers in a specific pool.
+     * @param _poolId The ID of the pool.
+     * @param _isActive If true, returns only active stakers. If false, returns all stakers.
+     * @return An array of staker addresses.
+     */
     function getAllStakersList(
         uint256 _poolId,
         bool _isActive
